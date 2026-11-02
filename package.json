@@ -1,0 +1,29 @@
+{
+  "name": "shyam-timber-monorepo",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c yellow,green \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w server && npm run build -w client",
+    "lint": "eslint server/src client/src --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\"",
+    "test": "npm test -w server",
+    "db:migrate": "npm run prisma:migrate -w server",
+    "db:seed": "npm run seed -w server",
+    "db:push": "npm run prisma:push -w server",
+    "setup": "npm install && npm run db:push && npm run db:seed",
+    "verify": "tsx scripts/verify-logic.ts"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "prettier": "^3.3.3"
+  }
+}

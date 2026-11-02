@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+  body { @apply font-sans antialiased min-h-screen; }
+  h1, h2, h3 { @apply font-serif; }
+  [lang='ta'] body, [lang='ta'] { font-family: 'Noto Sans Tamil', 'Inter', system-ui, sans-serif; }
+  button, a, input, select, textarea { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2; }
+}
+
+@layer components {
+  /* Lightweight CSS wood grain - no image request */
+  .wood {
+    background-color: #4a2f1b;
+    background-image:
+      repeating-linear-gradient(100deg, rgba(255,255,255,0.035) 0 2px, transparent 2px 9px, rgba(0,0,0,0.08) 9px 11px, transparent 11px 23px),
+      repeating-linear-gradient(97deg, transparent 0 14px, rgba(255,255,255,0.025) 14px 16px, transparent 16px 37px),
+      linear-gradient(180deg, #5a3a22, #4a2f1b 60%, #3e2715);
+  }
+  .card { @apply bg-white dark:bg-bark rounded-2xl shadow-card border border-sawdust/70 dark:border-walnut/60; }
+  .btn { @apply inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-xl font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none; }
+  .btn-primary { @apply btn bg-walnut text-cream hover:bg-bark dark:bg-teak dark:hover:bg-walnut; }
+  .btn-green { @apply btn bg-forest text-white hover:bg-[#264b2f]; }
+  .btn-gold { @apply btn bg-brass text-walnut hover:bg-[#b8882f]; }
+  .btn-ghost { @apply btn bg-transparent hover:bg-sawdust/60 dark:hover:bg-walnut/50; }
+  .btn-outline { @apply btn border-2 border-walnut text-walnut dark:border-sawdust dark:text-cream hover:bg-sawdust/50 dark:hover:bg-walnut/40; }
+  .input { @apply w-full min-h-[44px] rounded-xl border border-sawdust dark:border-walnut bg-white dark:bg-bark px-3 text-base text-walnut dark:text-cream placeholder:text-teak/60; }
+  .label { @apply block text-sm font-semibold mb-1 text-teak dark:text-sawdust; }
+  .chip { @apply inline-flex items-center min-h-[36px] px-3 rounded-full text-sm font-medium border border-sawdust dark:border-walnut bg-white dark:bg-bark whitespace-nowrap; }
+  .chip-active { @apply bg-walnut text-cream border-walnut dark:bg-brass dark:text-walnut dark:border-brass; }
+  .tag { @apply inline-block text-xs font-semibold px-2 py-1 rounded-md; }
+  .skeleton { @apply animate-pulse bg-sawdust dark:bg-walnut/50 rounded-xl; }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }

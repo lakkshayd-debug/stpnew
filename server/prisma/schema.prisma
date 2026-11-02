@@ -1,0 +1,300 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  CUSTOMER
+}
+
+enum Area {
+  PORUR
+  VALASARAVAKKAM
+  POONAMALLEE
+  RAMAPURAM
+  MANGADU
+  KUNDRATHUR
+  OTHER
+}
+
+enum CustomerType {
+  HOMEOWNER
+  CARPENTER
+  CONTRACTOR
+  INTERIOR_DESIGNER
+  BUILDER
+}
+
+enum PostType {
+  NEW_ARRIVAL
+  OFFER
+  TIP
+  PROJECT
+  ANNOUNCEMENT
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReferralStatus {
+  JOINED
+  PURCHASED
+  REWARDED
+  FLAGGED
+}
+
+enum RewardType {
+  WELCOME
+  REFERRER
+  MILESTONE
+}
+
+enum RewardStatus {
+  AVAILABLE
+  USED
+  EXPIRED
+}
+
+enum NotificationType {
+  NEW_POST
+  COMMENT_APPROVED
+  COMMENT_REPLIED
+  REFERRAL_JOINED
+  REWARD_EARNED
+  REWARD_EXPIRING
+  SYSTEM
+}
+
+model User {
+  id            String        @id @default(cuid())
+  phone         String        @unique
+  name          String
+  role          Role          @default(CUSTOMER)
+  area          Area?
+  customerType  CustomerType?
+  referralCode  String        @unique
+  badges        String[]      @default([])
+  signupIp      String?
+  deviceId      String?
+  isBlocked     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  posts         Post[]
+  likes         Like[]
+  comments      Comment[]
+  saved         SavedPost[]
+  referralsMade Referral[]    @relation("Referrer")
+  referredBy    Referral?     @relation("Referee")
+  rewards       Reward[]
+  notifications Notification[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  purchases     PurchaseConfirmation[] @relation("PurchaseCustomer")
+
+  @@index([role])
+  @@index([signupIp])
+  @@index([deviceId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Otp {
+  id        String    @id @default(cuid())
+  phone     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int       @default(0)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model Post {
+  id          String      @id @default(cuid())
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id])
+  title       String
+  description String
+  category    String
+  type        PostType    @default(NEW_ARRIVAL)
+  price       Decimal?    @db.Decimal(12, 2)
+  priceLabel  String?
+  priceUnit   String?
+  pinned      Boolean     @default(false)
+  isSample    Boolean     @default(false)
+  shareCount  Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  images      PostImage[]
+  likes       Like[]
+  comments    Comment[]
+  savedBy     SavedPost[]
+
+  @@index([pinned, createdAt(sort: Desc)])
+  @@index([category])
+  @@index([type])
+}
+
+model PostImage {
+  id     String  @id @default(cuid())
+  postId String
+  post   Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url    String
+  alt    String?
+  order  Int     @default(0)
+
+  @@index([postId])
+}
+
+model Like {
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model SavedPost {
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model Comment {
+  id             String        @id @default(cuid())
+  postId         String
+  post           Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body           String
+  status         CommentStatus @default(PENDING)
+  ownerReply     String?
+  ownerRepliedAt DateTime?
+  moderatedAt    DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([postId, status, createdAt])
+  @@index([status, createdAt])
+  @@index([authorId])
+}
+
+model Referral {
+  id         String         @id @default(cuid())
+  referrerId String
+  referrer   User           @relation("Referrer", fields: [referrerId], references: [id])
+  refereeId  String         @unique
+  referee    User           @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+  status     ReferralStatus @default(JOINED)
+  flagReason String?
+  purchase   PurchaseConfirmation?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([referrerId, status])
+  @@index([status, createdAt])
+}
+
+model PurchaseConfirmation {
+  id          String   @id @default(cuid())
+  referralId  String   @unique
+  referral    Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    User     @relation("PurchaseCustomer", fields: [customerId], references: [id])
+  invoiceNo   String   @unique
+  amount      Decimal  @db.Decimal(12, 2)
+  qualifying  Boolean
+  confirmedBy String
+  confirmedAt DateTime @default(now())
+}
+
+model Reward {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        RewardType
+  title       String
+  amount      Decimal      @db.Decimal(12, 2)
+  status      RewardStatus @default(AVAILABLE)
+  expiresAt   DateTime
+  usedInvoice String?
+  usedAt      DateTime?
+  sourceRefId String?
+  milestone   Int?
+  createdAt   DateTime     @default(now())
+
+  @@unique([userId, type, milestone])
+  @@index([userId, status])
+  @@index([status, expiresAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt, createdAt(sort: Desc)])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt(sort: Desc)])
+}
+
+/// Image bytes stored in Postgres so the app works on free hosting without a disk (STORAGE_DRIVER=db).
+model FileObject {
+  id        String   @id
+  mime      String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+}
